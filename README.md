@@ -6,6 +6,8 @@ Backend API for the Social Club Management Platform - a volunteer-led club manag
 
 - **Runtime:** Node.js
 - **Framework:** Express.js
+- **Security:** Helmet for security headers
+- **Logging:** Morgan for HTTP request logging
 - **Database:** MongoDB (future)
 - **Authentication:** JWT (future)
 - **Real-time:** Socket.io (future)
@@ -51,11 +53,76 @@ The API will be running on `http://localhost:8000`
 
 ### Health Check
 
-- `GET /api/health` - Returns API status and uptime
+- `GET /api/health` - Returns detailed API status, uptime, and system information
 
 ### Root
 
 - `GET /` - Returns basic API information
+
+### Development Only
+
+- `GET /api/test-error` - Test error handling (development environment only)
+
+## Testing with Postman
+
+### 1. Health Check Endpoint
+
+- **Method:** `GET`
+- **URL:** `http://localhost:8000/api/health`
+- **Expected Response:**
+
+  ```json
+  {
+    "status": "ok",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "uptime": 123.456,
+    "environment": "development",
+    "version": "1.0.0",
+    "memory": {
+      "used": 25.67,
+      "total": 50.12,
+      "external": 2.34
+    },
+    "checks": {
+      "server": "healthy"
+    }
+  }
+  ```
+
+### 2. Test 404 Error
+
+- **Method:** `GET`
+- **URL:** `http://localhost:8000/nonexistent-route`
+- **Expected Response:**
+
+  ```json
+  {
+    "success": false,
+    "error": "Route not found - GET /nonexistent-route",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "path": "/nonexistent-route"
+  }
+  ```
+
+### 3. Test Error Handling (Development Only)
+
+- **Method:** `GET`
+- **URL:** `http://localhost:8000/api/test-error`
+- **Expected Response:**
+
+  ```json
+  {
+    "success": false,
+    "error": "This is a test error",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "path": "/api/test-error",
+    "stack": "Error: This is a test error\n    at ...",
+    "details": {
+      "name": "Error",
+      "statusCode": 500
+    }
+  }
+  ```
 
 ## Environment Variables
 
@@ -63,9 +130,27 @@ The API will be running on `http://localhost:8000`
 | ------------- | ------------------------- | ------------------------------------ |
 | `PORT`        | Server port               | `8000`                               |
 | `NODE_ENV`    | Environment mode          | `development`                        |
-| `CORS_ORIGIN` | Allowed CORS origin       | `http://localhost:5173`              |
+| `CORS_ORIGIN` | Allowed CORS origins (comma-separated)       | `http://localhost:5173`              |
 | `MONGO_URI`   | MongoDB connection string | `mongodb://localhost:27017/clubmgmt` |
 | `JWT_SECRET`  | JWT signing secret        | `changeme_in_production`             |
+
+## Security Features
+
+- **Helmet:** Security headers including CSP, HSTS, and more
+- **CORS:** Configurable cross-origin resource sharing
+- **Request Size Limits:** JSON and URL-encoded payloads limited to 10MB
+- **Error Handling:** Sanitized error responses in production
+
+## Middleware Stack
+
+1. **Trust Proxy:** For accurate IP addresses behind proxies
+2. **Helmet:** Security headers
+3. **CORS:** Cross-origin resource sharing
+4. **Body Parser:** JSON and URL-encoded parsing
+5. **Morgan:** HTTP request logging
+6. **Routes:** Application routes
+7. **404 Handler:** Catch unmatched routes
+8. **Error Handler:** Central error handling
 
 ## Project Structure
 
@@ -74,8 +159,13 @@ api/
 ├── src/
 │   ├── controllers/     # Route controllers (future)
 │   ├── middlewares/     # Express middleware
+│   │   ├── cors.js      # CORS configuration
+│   │   ├── errorHandler.js # Error handling
+│   │   ├── logger.js    # Request logging
+│   │   └── security.js  # Security headers
 │   ├── models/          # Database models (future)
 │   ├── routes/          # Route definitions
+│   │   └── health.js    # Health check routes
 │   ├── services/        # Business logic (future)
 │   ├── utils/           # Utility functions (future)
 │   ├── app.js           # Express app configuration
@@ -96,33 +186,30 @@ api/
 
 ### Error Handling
 
-- All errors are handled by centralized error middleware
-- Development mode includes stack traces
-- Production mode returns clean error messages
+- Centralized error middleware handles all errors
+- Development mode includes detailed error information
+- Production mode returns sanitized error messages
+- Async error wrapper available for route handlers
 
-### CORS
+### Logging
 
-- Configured to allow requests from frontend origin
-- Credentials enabled for authentication cookies
+- HTTP requests logged with method, URL, status, and response time
+- Different formats for development and production
+- Health check requests skipped in production logs
 
-## Upcoming Features
+### CORS Configuration
 
-This MVP backend will be extended with:
-
-- User authentication & authorization
-- Club management APIs
-- Event management
-- Payment processing
-- Real-time messaging
-- File uploads
-- Member management
+- Multiple origins supported (comma-separated in .env)
+- Credentials enabled for authentication
+- Preflight requests handled automatically
 
 ## Contributing
 
 1. Create feature branch
 2. Make changes following existing patterns
-3. Test endpoints manually
-4. Submit pull request
+3. Test endpoints with Postman or curl
+4. Ensure linting passes
+5. Submit pull request
 
 ## License
 
