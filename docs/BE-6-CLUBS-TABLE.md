@@ -8,16 +8,16 @@ The `public.clubs` table stores core club data for the Social Club Manager platf
 
 ### Table: `public.clubs`
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() | Unique identifier for the club |
-| `name` | TEXT | NOT NULL | Name of the club |
-| `type` | TEXT | NOT NULL | Club category/type (sports, scouts, hobby, etc.) |
-| `description` | TEXT | NULL | Optional club description |
-| `logo_url` | TEXT | NULL | Optional URL to club logo image |
-| `creator_id` | UUID | REFERENCES auth.users(id) ON DELETE SET NULL | User who created the club |
-| `enabled_modules` | JSONB | NULL | Array of enabled feature modules |
-| `created_at` | TIMESTAMP WITH TIME ZONE | DEFAULT timezone('utc', now()) | Club creation timestamp |
+| Column            | Type                     | Constraints                                  | Description                                      |
+| ----------------- | ------------------------ | -------------------------------------------- | ------------------------------------------------ |
+| `id`              | UUID                     | PRIMARY KEY, DEFAULT gen_random_uuid()       | Unique identifier for the club                   |
+| `name`            | TEXT                     | NOT NULL                                     | Name of the club                                 |
+| `type`            | TEXT                     | NOT NULL                                     | Club category/type (sports, scouts, hobby, etc.) |
+| `description`     | TEXT                     | NULL                                         | Optional club description                        |
+| `logo_url`        | TEXT                     | NULL                                         | Optional URL to club logo image                  |
+| `creator_id`      | UUID                     | REFERENCES auth.users(id) ON DELETE SET NULL | User who created the club                        |
+| `enabled_modules` | JSONB                    | NULL                                         | Array of enabled feature modules                 |
+| `created_at`      | TIMESTAMP WITH TIME ZONE | DEFAULT timezone('utc', now())               | Club creation timestamp                          |
 
 ## Indexes
 
@@ -34,6 +34,7 @@ The `public.clubs` table stores core club data for the Social Club Manager platf
 RLS is **enabled** on this table with the following policies:
 
 ### Read Policy
+
 - **Name**: "Clubs are publicly readable by authenticated users"
 - **Operation**: SELECT
 - **Users**: authenticated
@@ -41,6 +42,7 @@ RLS is **enabled** on this table with the following policies:
 - **Purpose**: Allows users to browse and discover clubs for joining
 
 ### Insert Policy
+
 - **Name**: "Users can create clubs"
 - **Operation**: INSERT
 - **Users**: authenticated
@@ -48,6 +50,7 @@ RLS is **enabled** on this table with the following policies:
 - **Purpose**: Users can only create clubs where they are the creator
 
 ### Update Policy
+
 - **Name**: "Club creators can update their own clubs"
 - **Operation**: UPDATE
 - **Users**: authenticated
@@ -55,6 +58,7 @@ RLS is **enabled** on this table with the following policies:
 - **Purpose**: Only club creators can modify their clubs
 
 ### Delete Policy
+
 - **Name**: "Club creators can delete their own clubs"
 - **Operation**: DELETE
 - **Users**: authenticated
@@ -64,7 +68,9 @@ RLS is **enabled** on this table with the following policies:
 ## Data Types and Validation
 
 ### Club Types
+
 Recommended values for the `type` field:
+
 - `sports` - Sports clubs and teams
 - `scouts` - Scouting organizations
 - `hobby` - Hobby and interest groups
@@ -75,7 +81,9 @@ Recommended values for the `type` field:
 - `other` - Other club types
 
 ### Enabled Modules
+
 The `enabled_modules` JSONB field can contain an array of module names:
+
 - `events` - Event management
 - `inventory` - Inventory tracking
 - `payments` - Payment processing
@@ -85,6 +93,7 @@ The `enabled_modules` JSONB field can contain an array of module names:
 - `documents` - Document management
 
 Example:
+
 ```json
 ["events", "member_management", "communications"]
 ```
@@ -92,6 +101,7 @@ Example:
 ## Usage Examples
 
 ### Creating a Club
+
 ```sql
 INSERT INTO public.clubs (name, type, description, creator_id, enabled_modules)
 VALUES (
@@ -104,22 +114,25 @@ VALUES (
 ```
 
 ### Querying Clubs by Creator
+
 ```sql
-SELECT * FROM public.clubs 
+SELECT * FROM public.clubs
 WHERE creator_id = 'user-uuid-here'
 ORDER BY created_at DESC;
 ```
 
 ### Querying Clubs by Type
+
 ```sql
-SELECT * FROM public.clubs 
+SELECT * FROM public.clubs
 WHERE type = 'sports'
 ORDER BY name;
 ```
 
 ### Searching Clubs by Name
+
 ```sql
-SELECT * FROM public.clubs 
+SELECT * FROM public.clubs
 WHERE LOWER(name) LIKE LOWER('%soccer%')
 ORDER BY name;
 ```
@@ -134,6 +147,7 @@ ORDER BY name;
 ## Migration Notes
 
 This table was created as part of ticket BE-6. The schema supports:
+
 - MVP functionality for club creation and management
 - Future extensibility through the `enabled_modules` JSONB field
 - Proper relationships with the authentication system

@@ -1,9 +1,9 @@
 /**
  * Club Model
- * 
+ *
  * Represents the club entity and its structure in the Supabase database.
  * This model defines the schema for the public.clubs table.
- * 
+ *
  * @file Club.js
  * @version 1.0.0
  * @author Social Club Manager API
@@ -34,7 +34,7 @@ const CLUB_TYPES = {
   SOCIAL: 'social',
   VOLUNTEER: 'volunteer',
   PROFESSIONAL: 'professional',
-  OTHER: 'other'
+  OTHER: 'other',
 };
 
 /**
@@ -47,7 +47,7 @@ const AVAILABLE_MODULES = {
   COMMUNICATIONS: 'communications',
   MEMBER_MANAGEMENT: 'member_management',
   REPORTS: 'reports',
-  DOCUMENTS: 'documents'
+  DOCUMENTS: 'documents',
 };
 
 /**
@@ -57,20 +57,20 @@ const VALIDATION_RULES = {
   name: {
     required: true,
     minLength: 2,
-    maxLength: 100
+    maxLength: 100,
   },
   type: {
     required: true,
-    enum: Object.values(CLUB_TYPES)
+    enum: Object.values(CLUB_TYPES),
   },
   description: {
     required: false,
-    maxLength: 500
+    maxLength: 500,
   },
   logo_url: {
     required: false,
-    pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|svg|webp)$/i
-  }
+    pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|svg|webp)$/i,
+  },
 };
 
 /**
@@ -84,15 +84,15 @@ const TABLE_CONFIG = {
     creator_id: {
       table: 'auth.users',
       column: 'id',
-      onDelete: 'SET NULL'
-    }
+      onDelete: 'SET NULL',
+    },
   },
   indexes: [
     'unique_club_name_per_creator',
     'idx_clubs_creator_id',
-    'idx_clubs_type'
+    'idx_clubs_type',
   ],
-  rlsEnabled: true
+  rlsEnabled: true,
 };
 
 /**
@@ -102,7 +102,7 @@ const RLS_POLICIES = {
   select: 'Clubs are publicly readable by authenticated users',
   insert: 'Users can create clubs',
   update: 'Club creators can update their own clubs',
-  delete: 'Club creators can delete their own clubs'
+  delete: 'Club creators can delete their own clubs',
 };
 
 module.exports = {
@@ -110,5 +110,5 @@ module.exports = {
   AVAILABLE_MODULES,
   VALIDATION_RULES,
   TABLE_CONFIG,
-  RLS_POLICIES
+  RLS_POLICIES,
 };
