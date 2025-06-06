@@ -10,6 +10,7 @@ const { errorHandler, notFound } = require('./middlewares/errorHandler');
 // Import routes
 const healthRoutes = require('./routes/health');
 const profileRoutes = require('./routes/profiles');
+const authRoutes = require('./routes/auth');
 
 // Initialize Express app
 const app = express();
@@ -43,6 +44,7 @@ app.use(logger);
 // Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/auth', authRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
