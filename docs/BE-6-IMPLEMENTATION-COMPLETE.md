@@ -7,6 +7,7 @@ The **[BE-6] Club Model & Supabase Table Schema** ticket has been fully implemen
 ## ✅ Completed Tasks
 
 ### 1. Database Schema Implementation
+
 - **File**: `api/scripts/be-6-clubs-schema.sql`
 - Created `public.clubs` table with all required fields:
   - `id` (UUID, Primary Key, auto-generated)
@@ -19,12 +20,14 @@ The **[BE-6] Club Model & Supabase Table Schema** ticket has been fully implemen
   - `created_at` (TIMESTAMP, default now)
 
 ### 2. Indexes Created
-- **Primary Key**: `id` 
+
+- **Primary Key**: `id`
 - **Unique Index**: `unique_club_name_per_creator` on `(creator_id, lower(name))`
 - **Performance Index**: `idx_clubs_creator_id` on `creator_id`
 - **Performance Index**: `idx_clubs_type` on `type`
 
 ### 3. Row Level Security (RLS)
+
 - **Enabled**: RLS is active on the table
 - **Read Policy**: All authenticated users can read clubs (for discovery/joining)
 - **Insert Policy**: Users can only create clubs where they are the creator
@@ -32,11 +35,13 @@ The **[BE-6] Club Model & Supabase Table Schema** ticket has been fully implemen
 - **Delete Policy**: Only club creators can delete their clubs
 
 ### 4. Documentation & Model
+
 - **Model File**: `api/src/models/Club.js` - Defines club structure, types, validation rules
 - **Documentation**: `api/docs/BE-6-CLUBS-TABLE.md` - Complete table documentation
 - **Test Script**: `api/scripts/test-be-6-clubs.sql` - Validation queries for testing
 
 ### 5. Integration
+
 - Updated `api/scripts/supabase-setup.sql` to reference the clubs schema
 
 ## 🎯 Acceptance Criteria Met
@@ -59,12 +64,14 @@ The **[BE-6] Club Model & Supabase Table Schema** ticket has been fully implemen
 ## 🚀 Next Steps for Testing
 
 1. **Supabase Dashboard Testing**:
+
    ```sql
    -- Execute in Supabase SQL Editor:
    -- Copy and run api/scripts/be-6-clubs-schema.sql
    ```
 
 2. **Validation Testing**:
+
    ```sql
    -- Execute validation queries:
    -- Copy and run api/scripts/test-be-6-clubs.sql

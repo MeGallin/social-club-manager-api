@@ -1,0 +1,242 @@
+{
+  "info": {
+    "name": "Social Club Manager - Clubs API (BE-7)",
+    "description": "API endpoints for creating, updating, and deleting clubs",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "clubId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create Club",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sunnyvale Rugby\",\n  \"type\": \"sports\",\n  \"description\": \"Local rugby club for all ages and skill levels\",\n  \"logo_url\": \"https://example.com/logo.png\",\n  \"enabled_modules\": [\"events\", \"payments\", \"messaging\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Club by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{{clubId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs", "{{clubId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Club",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Updated description for the rugby club\",\n  \"enabled_modules\": [\"events\", \"messaging\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{{clubId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs", "{{clubId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Club",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{{clubId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs", "{{clubId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get My Clubs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/my-clubs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs", "my-clubs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Club - Validation Error (Missing Name)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"sports\",\n  \"description\": \"Club without a name\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Club - Invalid Type",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Club\",\n  \"type\": \"invalid_type\",\n  \"description\": \"Club with invalid type\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Club - Unauthorized (Wrong User)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer different_user_token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Trying to update someone else's club\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{{clubId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs", "{{clubId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Club - Not Found",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/non-existent-id",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clubs", "non-existent-id"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
