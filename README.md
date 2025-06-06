@@ -73,6 +73,18 @@ The API will be running on `http://localhost:8000`
 - `GET /api/profile/consent` - Get user's consent status (requires JWT)
 - `PUT /api/profile/consent` - Update user's consent status (requires JWT)
 
+### Club Management
+
+- `POST /api/clubs` - Create a new club
+- `GET /api/clubs/:id` - Get club by ID
+- `PATCH /api/clubs/:id` - Update club (creator only)
+- `DELETE /api/clubs/:id` - Delete club (creator only)
+- `GET /api/clubs/my-clubs` - Get current user's clubs
+
+### Onboarding
+
+- `POST /api/onboarding/club` - Create club via guided onboarding workflow (requires at least one enabled module)
+
 ### Root
 
 - `GET /` - Returns basic API information

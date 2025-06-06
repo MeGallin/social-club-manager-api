@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "BE-8 Club Onboarding API",
+    "description": "Test collection for the Club Onboarding Workflow API endpoint",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Club Onboarding - Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "description": "Replace with valid JWT token"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Brighton Chess Club\",\n  \"type\": \"hobby\",\n  \"description\": \"A club for chess enthusiasts.\",\n  \"logo_url\": \"https://example.com/logo.png\",\n  \"enabled_modules\": [\"events\", \"messaging\", \"payments\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Create a new club via the onboarding workflow with all valid fields"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - Missing Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"hobby\",\n  \"enabled_modules\": [\"events\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test validation: should return 400 error for missing name"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - Missing Type",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Club\",\n  \"enabled_modules\": [\"events\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test validation: should return 400 error for missing type"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - No Modules",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Club\",\n  \"type\": \"hobby\",\n  \"enabled_modules\": []\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test onboarding-specific validation: should return 400 error for empty modules array"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - Missing Modules",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Club\",\n  \"type\": \"hobby\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test onboarding-specific validation: should return 400 error for missing enabled_modules"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - Invalid Modules",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Club\",\n  \"type\": \"hobby\",\n  \"enabled_modules\": [\"invalid_module\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test module validation: should return 400 error for invalid module names"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - No Authentication",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Club\",\n  \"type\": \"hobby\",\n  \"enabled_modules\": [\"events\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test authentication: should return 401 error for missing JWT token"
+      },
+      "response": []
+    },
+    {
+      "name": "Club Onboarding - With Future Invite Emails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Future Club\",\n  \"type\": \"sports\",\n  \"description\": \"Testing future invite functionality\",\n  \"enabled_modules\": [\"events\", \"messaging\"],\n  \"invite_emails\": [\"coach@example.com\", \"parent@example.com\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/onboarding/club",
+          "host": ["{{base_url}}"],
+          "path": ["api", "onboarding", "club"]
+        },
+        "description": "Test with optional invite_emails field (prepared for future extension)"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token_here",
+      "description": "Valid JWT token for authentication"
+    }
+  ]
+}

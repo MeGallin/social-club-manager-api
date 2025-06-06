@@ -13,6 +13,7 @@ const profileRoutes = require('./routes/profiles');
 const authRoutes = require('./routes/auth');
 const consentRoutes = require('./routes/consent');
 const clubRoutes = require('./routes/clubs');
+const onboardingRoutes = require('./routes/onboarding');
 
 // Initialize Express app
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/profiles', profileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile/consent', consentRoutes);
 app.use('/api/clubs', clubRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
