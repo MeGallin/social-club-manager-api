@@ -128,10 +128,24 @@ for all using (
 -- WHERE trigger_name = 'on_auth_user_created';
 
 -- ========================================================
+-- ========================================================
+-- ADDITIONAL SCHEMAS
+-- ========================================================
+-- For complete setup, also run these additional schema files:
+-- 
+-- BE-5: GDPR/Privacy Consent Schema
+-- File: be-5-consent-schema.sql
+--
+-- BE-6: Clubs Table Schema
+-- File: be-6-clubs-schema.sql
+--
+
 -- SETUP COMPLETE
 -- ========================================================
 -- After executing all the above SQL commands:
 -- 1. Test the setup using the Postman collection provided in BE-3.md
 -- 2. Verify that new user registrations automatically create profile records
 -- 3. Ensure RLS policies are working by testing access controls
+-- 4. Run be-6-clubs-schema.sql for club functionality
+-- 5. Test clubs table using test-be-6-clubs.sql
 -- ========================================================
