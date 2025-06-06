@@ -9,25 +9,30 @@ const {
   deleteProfile,
   checkProfileExists,
 } = require('../controllers/profileController');
+const {
+  extractUserId,
+  authenticateToken,
+  requireAdmin,
+} = require('../middlewares/auth');
 
 const router = express.Router();
 
 /**
  * Profile Routes
  *
- * Note: In production, these routes would include authentication middleware
- * For testing purposes, user ID is passed via x-user-id header
+ * Note: These routes support both JWT authentication and x-user-id header for backward compatibility
+ * In production, JWT authentication should be used exclusively
  */
 
 // @desc    Get current user's profile
 // @route   GET /api/profiles/me
 // @access  Private
-router.get('/me', getMyProfile);
+router.get('/me', extractUserId, getMyProfile);
 
 // @desc    Update current user's profile
 // @route   PUT /api/profiles/me
 // @access  Private
-router.put('/me', updateMyProfile);
+router.put('/me', extractUserId, updateMyProfile);
 
 // @desc    Get all profiles
 // @route   GET /api/profiles

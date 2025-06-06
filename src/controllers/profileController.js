@@ -12,14 +12,13 @@ const { asyncHandler } = require('../middlewares/errorHandler');
  * @access  Private (requires authentication)
  */
 const getMyProfile = asyncHandler(async (req, res) => {
-  // Note: In a real app, userId would come from authenticated user token
-  // For now, we'll expect it in headers for testing
-  const userId = req.headers['x-user-id'];
+  // User ID is extracted by auth middleware
+  const userId = req.userId;
 
   if (!userId) {
     return res.status(400).json({
       success: false,
-      error: 'User ID is required. Send as x-user-id header for testing.',
+      error: 'User ID is required. Authentication failed.',
     });
   }
 
@@ -74,13 +73,13 @@ const getAllProfiles = asyncHandler(async (req, res) => {
  * @access  Private (requires authentication)
  */
 const updateMyProfile = asyncHandler(async (req, res) => {
-  // Note: In a real app, userId would come from authenticated user token
-  const userId = req.headers['x-user-id'];
+  // User ID is extracted by auth middleware
+  const userId = req.userId;
 
   if (!userId) {
     return res.status(400).json({
       success: false,
-      error: 'User ID is required. Send as x-user-id header for testing.',
+      error: 'User ID is required. Authentication failed.',
     });
   }
 
