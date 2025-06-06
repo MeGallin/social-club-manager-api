@@ -209,10 +209,78 @@ const getMyClubs = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get club members
+ * @route   GET /api/clubs/:id/members
+ * @access  Private (requires club membership)
+ */
+const getClubMembers = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Club ID is required',
+    });
+  }
+
+  try {
+    const members = await clubService.getClubMembers(id, userId);
+
+    res.status(200).json({
+      success: true,
+      data: members,
+      count: members.length,
+    });
+  } catch (error) {
+    if (error.message.includes('must be a club member')) {
+      return res.status(403).json({
+        success: false,
+        error: 'You must be a club member to view the member list',
+      });
+    }
+    throw error;
+  }
+});
+
+/**
+ * @desc    Get user's membership in a club
+ * @route   GET /api/clubs/:id/membership
+ * @access  Private (requires authentication)
+ */
+const getClubMembership = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Club ID is required',
+    });
+  }
+
+  const membership = await clubService.getUserClubMembership(id, userId);
+
+  if (!membership) {
+    return res.status(404).json({
+      success: false,
+      error: 'You are not a member of this club',
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: membership,
+  });
+});
+
 module.exports = {
   createClub,
   getClubById,
   updateClub,
   deleteClub,
   getMyClubs,
+  getClubMembers,
+  getClubMembership,
 };

@@ -143,26 +143,70 @@ class ClubService {
     };
 
     try {
-      const { data, error } = await supabase
+      // Step 1: Create the club
+      const { data: clubData, error: clubError } = await supabase
         .from('clubs')
         .insert([clubToInsert])
         .select()
         .single();
 
-      if (error) {
+      if (clubError) {
         // Handle unique constraint violation
         if (
-          error.code === '23505' &&
-          error.message.includes('unique_club_name_per_creator')
+          clubError.code === '23505' &&
+          clubError.message.includes('unique_club_name_per_creator')
         ) {
           throw new Error('A club with this name already exists for this user');
         }
-        throw new Error(`Database error: ${error.message}`);
+        throw new Error(`Database error: ${clubError.message}`);
       }
 
-      return data;
+      // Step 2: Assign creator as owner in club_members table
+      const memberData = {
+        club_id: clubData.id,
+        user_id: creatorId,
+        role: 'owner',
+      };
+
+      const { error: memberError } = await supabase
+        .from('club_members')
+        .insert([memberData]);
+
+      if (memberError) {
+        // If member insertion fails, we should clean up the club
+        // Note: In a real transaction, this would be handled automatically
+        // For now, we'll log the error and continue since the club exists
+        console.error(
+          'Failed to create owner membership:',
+          memberError.message,
+        );
+
+        // Attempt to delete the created club
+        try {
+          await supabase.from('clubs').delete().eq('id', clubData.id);
+        } catch (cleanupError) {
+          console.error(
+            'Failed to cleanup club after member insertion error:',
+            cleanupError,
+          );
+        }
+
+        throw new Error(`Failed to assign owner role: ${memberError.message}`);
+      }
+
+      // Return the created club with success confirmation
+      return {
+        ...clubData,
+        _membership: {
+          role: 'owner',
+          joined_at: new Date().toISOString(),
+        },
+      };
     } catch (error) {
       if (error.message.includes('A club with this name already exists')) {
+        throw error;
+      }
+      if (error.message.includes('Failed to assign owner role')) {
         throw error;
       }
       throw new Error(`Failed to create club: ${error.message}`);
@@ -336,6 +380,123 @@ class ClubService {
       return data || [];
     } catch (error) {
       throw new Error(`Failed to retrieve clubs: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get club members with their roles
+   * @param {string} clubId - The club ID
+   * @param {string} userId - The requesting user's ID (for permission check)
+   * @returns {Promise<Array>} List of club members
+   */
+  async getClubMembers(clubId, userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      // First verify the user is a member of this club
+      const { data: membership, error: membershipError } = await supabase
+        .from('club_members')
+        .select('role')
+        .eq('club_id', clubId)
+        .eq('user_id', userId)
+        .single();
+
+      if (membershipError || !membership) {
+        throw new Error('You must be a club member to view the member list');
+      }
+
+      // Get all members of the club
+      const { data, error } = await supabase
+        .from('club_members')
+        .select(
+          `
+          user_id,
+          role,
+          joined_at,
+          profiles:user_id (
+            full_name,
+            avatar_url
+          )
+        `,
+        )
+        .eq('club_id', clubId)
+        .order('joined_at', { ascending: true });
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      throw new Error(`Failed to retrieve club members: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get user's membership in a specific club
+   * @param {string} clubId - The club ID
+   * @param {string} userId - The user's ID
+   * @returns {Promise<Object|null>} User's membership or null
+   */
+  async getUserClubMembership(clubId, userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('club_members')
+        .select('*')
+        .eq('club_id', clubId)
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 is "no rows returned", which is expected when user is not a member
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return data || null;
+    } catch (error) {
+      throw new Error(`Failed to retrieve user membership: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check if user has admin permissions for a club
+   * @param {string} clubId - The club ID
+   * @param {string} userId - The user's ID
+   * @returns {Promise<boolean>} Whether user has admin permissions
+   */
+  async isClubAdmin(clubId, userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('club_members')
+        .select('role')
+        .eq('club_id', clubId)
+        .eq('user_id', userId)
+        .in('role', ['owner', 'admin'])
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return !!data;
+    } catch (error) {
+      throw new Error(`Failed to check admin status: ${error.message}`);
     }
   }
 }

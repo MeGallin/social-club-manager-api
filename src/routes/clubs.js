@@ -6,6 +6,8 @@ const {
   updateClub,
   deleteClub,
   getMyClubs,
+  getClubMembers,
+  getClubMembership,
 } = require('../controllers/clubController');
 
 const router = express.Router();
@@ -33,6 +35,20 @@ router.post('/', createClub);
  * @access  Private
  */
 router.get('/:id', getClubById);
+
+/**
+ * @route   GET /api/clubs/:id/members
+ * @desc    Get club members (requires club membership)
+ * @access  Private
+ */
+router.get('/:id/members', getClubMembers);
+
+/**
+ * @route   GET /api/clubs/:id/membership
+ * @desc    Get user's membership in a club
+ * @access  Private
+ */
+router.get('/:id/membership', getClubMembership);
 
 /**
  * @route   PATCH /api/clubs/:id
