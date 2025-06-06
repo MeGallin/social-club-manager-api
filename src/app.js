@@ -9,6 +9,7 @@ const { errorHandler, notFound } = require('./middlewares/errorHandler');
 
 // Import routes
 const healthRoutes = require('./routes/health');
+const profileRoutes = require('./routes/profiles');
 
 // Initialize Express app
 const app = express();
@@ -23,20 +24,25 @@ app.use(securityHeaders);
 app.use(corsMiddleware);
 
 // Body parsing middleware
-app.use(express.json({ 
-  limit: '10mb',
-  type: 'application/json'
-}));
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: '10mb'
-}));
+app.use(
+  express.json({
+    limit: '10mb',
+    type: 'application/json',
+  }),
+);
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+  }),
+);
 
 // Logging middleware
 app.use(logger);
 
 // Routes
 app.use('/api/health', healthRoutes);
+app.use('/api/profiles', profileRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -45,7 +51,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     status: 'running',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
