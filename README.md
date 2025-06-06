@@ -55,6 +55,24 @@ The API will be running on `http://localhost:8000`
 
 - `GET /api/health` - Returns detailed API status, uptime, and system information
 
+### Authentication
+
+- `POST /api/auth/register` - Register a new user (requires GDPR consent)
+- `POST /api/auth/login` - Login with email and password
+
+### Profile Management
+
+- `GET /api/profiles` - Get all profiles (admin)
+- `GET /api/profiles/:id` - Get specific profile by ID
+- `PUT /api/profiles/:id` - Update profile by ID
+- `GET /api/profiles/me` - Get current user's profile
+- `PUT /api/profiles/me` - Update current user's profile
+
+### GDPR/Privacy Consent
+
+- `GET /api/profile/consent` - Get user's consent status (requires JWT)
+- `PUT /api/profile/consent` - Update user's consent status (requires JWT)
+
 ### Root
 
 - `GET /` - Returns basic API information
@@ -62,6 +80,40 @@ The API will be running on `http://localhost:8000`
 ### Development Only
 
 - `GET /api/test-error` - Test error handling (development environment only)
+
+## GDPR/Privacy Compliance
+
+This API implements strict GDPR compliance for user consent:
+
+### Registration Requirements
+
+- **GDPR Consent Required**: All user registrations MUST include explicit consent
+- **Consent Validation**: The `consent` field must be explicitly set to `true`
+- **Blocked Registration**: Registration will fail if consent is not provided or set to `false`
+
+### Consent Management
+
+Users can view and update their consent status through protected endpoints:
+
+- **View Consent**: `GET /api/profile/consent` (requires authentication)
+- **Update Consent**: `PUT /api/profile/consent` (requires authentication)
+
+### Example Registration with Consent
+
+```json
+{
+  "email": "user@tws.com",
+  "password": "SecurePass123!",
+  "full_name": "John Doe",
+  "consent": true
+}
+```
+
+### Data Storage
+
+- Consent status stored in `public.profiles` table
+- Consent date automatically tracked
+- User metadata includes consent information
 
 ## Testing with Postman
 
@@ -126,13 +178,13 @@ The API will be running on `http://localhost:8000`
 
 ## Environment Variables
 
-| Variable      | Description               | Default                              |
-| ------------- | ------------------------- | ------------------------------------ |
-| `PORT`        | Server port               | `8000`                               |
-| `NODE_ENV`    | Environment mode          | `development`                        |
-| `CORS_ORIGIN` | Allowed CORS origins (comma-separated)       | `http://localhost:5173`              |
-| `MONGO_URI`   | MongoDB connection string | `mongodb://localhost:27017/clubmgmt` |
-| `JWT_SECRET`  | JWT signing secret        | `changeme_in_production`             |
+| Variable      | Description                            | Default                              |
+| ------------- | -------------------------------------- | ------------------------------------ |
+| `PORT`        | Server port                            | `8000`                               |
+| `NODE_ENV`    | Environment mode                       | `development`                        |
+| `CORS_ORIGIN` | Allowed CORS origins (comma-separated) | `http://localhost:5173`              |
+| `MONGO_URI`   | MongoDB connection string              | `mongodb://localhost:27017/clubmgmt` |
+| `JWT_SECRET`  | JWT signing secret                     | `changeme_in_production`             |
 
 ## Security Features
 

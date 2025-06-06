@@ -11,6 +11,7 @@ const { errorHandler, notFound } = require('./middlewares/errorHandler');
 const healthRoutes = require('./routes/health');
 const profileRoutes = require('./routes/profiles');
 const authRoutes = require('./routes/auth');
+const consentRoutes = require('./routes/consent');
 
 // Initialize Express app
 const app = express();
@@ -45,6 +46,7 @@ app.use(logger);
 app.use('/api/health', healthRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/profile/consent', consentRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

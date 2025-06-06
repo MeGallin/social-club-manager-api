@@ -400,6 +400,167 @@ Authorization: Bearer <access_token>
 
 ---
 
+## GDPR/Privacy Consent Endpoints
+
+These endpoints allow users to view and update their GDPR/privacy consent status. All endpoints require JWT authentication.
+
+### Base URL for Consent Endpoints
+
+```
+http://localhost:8000/api/profile/consent
+```
+
+### 1. Get Consent Status
+
+Retrieve the current consent status for the authenticated user.
+
+**Endpoint:** `GET /api/profile/consent`  
+**Access:** Private (requires JWT)
+
+#### Request Headers
+
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "data": {
+    "consent": true
+  }
+}
+```
+
+#### Error Responses
+
+**401 Unauthorized**
+
+```json
+{
+  "success": false,
+  "error": "Access token required"
+}
+```
+
+**404 Not Found**
+
+```json
+{
+  "success": false,
+  "error": "Profile not found"
+}
+```
+
+**500 Internal Server Error**
+
+```json
+{
+  "success": false,
+  "error": "Failed to retrieve consent status"
+}
+```
+
+### 2. Update Consent Status
+
+Update the consent status for the authenticated user.
+
+**Endpoint:** `PUT /api/profile/consent`  
+**Access:** Private (requires JWT)
+
+#### Request Headers
+
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+#### Request Body
+
+```json
+{
+  "consent": true
+}
+```
+
+#### Field Validation
+
+- `consent` (required): Boolean value (true or false)
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Consent status updated successfully",
+  "data": {
+    "consent": true
+  }
+}
+```
+
+#### Error Responses
+
+**400 Bad Request**
+
+```json
+{
+  "success": false,
+  "error": "Consent must be a boolean value (true or false)"
+}
+```
+
+**401 Unauthorized**
+
+```json
+{
+  "success": false,
+  "error": "Access token required"
+}
+```
+
+**500 Internal Server Error**
+
+```json
+{
+  "success": false,
+  "error": "Failed to update consent status"
+}
+```
+
+## GDPR Compliance Notes
+
+### Registration Requirements
+
+- **Consent is mandatory**: Users cannot register without explicitly setting `consent: true`
+- **Consent validation**: The system validates that consent is exactly `true` (not just truthy)
+- **Consent storage**: Consent status and timestamp are stored in the `public.profiles` table
+- **Profile creation**: User profiles are automatically created with consent data during registration
+
+### Consent Management
+
+- **User control**: Users can view and update their consent status at any time
+- **Audit trail**: Consent changes are timestamped for compliance tracking
+- **JWT protection**: All consent operations require valid authentication
+- **Data integrity**: Consent updates are immediately reflected in the user's profile
+
+### Database Schema
+
+The consent data is stored in the `public.profiles` table with the following fields:
+
+```sql
+consent boolean DEFAULT false NOT NULL,
+consent_date timestamp with time zone
+```
+
+- `consent`: Boolean flag indicating current consent status
+- `consent_date`: Timestamp when consent was last granted (NULL if consent is false)
+
+---
+
 ## Authentication Flow
 
 ### Registration Flow

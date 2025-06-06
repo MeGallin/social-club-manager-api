@@ -38,12 +38,14 @@ class AuthService {
     const { email, password, full_name, avatar_url, consent } = userData;
 
     // Validate required fields
-    if (!email || !password || !consent) {
+    if (!email || !password || consent !== true) {
       throw new Error('Email, password, and GDPR consent are required');
     }
 
-    if (!consent) {
-      throw new Error('GDPR consent is required for registration');
+    if (consent !== true) {
+      throw new Error(
+        'GDPR consent is required for registration. Consent must be explicitly set to true.',
+      );
     }
 
     // Return mock data if Supabase is not configured

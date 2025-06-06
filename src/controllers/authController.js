@@ -22,10 +22,11 @@ const registerUser = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!consent) {
+  if (!consent || consent !== true) {
     return res.status(400).json({
       success: false,
-      error: 'GDPR consent is required for registration',
+      error:
+        'GDPR consent is required for registration. Consent must be explicitly set to true.',
     });
   }
 

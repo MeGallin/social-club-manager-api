@@ -227,6 +227,44 @@ class ProfileService {
       throw new Error(`Profile service error: ${error.message}`);
     }
   }
+
+  /**
+   * Update user's consent status
+   * @param {string} userId - The user's UUID
+   * @param {boolean} consent - New consent status
+   * @returns {Promise<Object>} Updated profile data
+   */
+  async updateConsent(userId, consent) {
+    try {
+      // Return mock data if Supabase is not configured
+      if (!this._isSupabaseAvailable()) {
+        const mockProfile = this._getMockProfile(userId);
+        mockProfile.consent = consent;
+        mockProfile.consent_date = consent ? new Date().toISOString() : null;
+        return mockProfile;
+      }
+
+      const updateData = {
+        consent: consent,
+        consent_date: consent ? new Date().toISOString() : null,
+      };
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to update consent: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      throw new Error(`Profile service error: ${error.message}`);
+    }
+  }
 }
 
 module.exports = new ProfileService();
