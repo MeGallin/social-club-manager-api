@@ -323,3 +323,306 @@ curl -X GET "http://localhost:8000/api/profiles/{USER_ID}"
 - [ ] Tested user-scoped operations with x-user-id header
 
 **🎉 When all tests pass, your BE-3 implementation is complete!**
+
+---
+
+# BE-5 GDPR/Privacy Consent Tests
+
+This section provides comprehensive testing for the GDPR consent handling features implemented in BE-5.
+
+## Prerequisites for Consent Tests
+
+- ✅ All BE-3 and BE-4 tests completed successfully
+- ✅ Consent schema applied to database (`be-5-consent-schema.sql`)
+- ✅ Backend API running with consent endpoints
+- ✅ Valid JWT token from registration or login
+
+### Test 1: Registration WITHOUT Consent (Should Fail)
+
+**Purpose:** Verify that registration is blocked when consent is not provided
+
+- **Method:** `POST`
+- **URL:** `http://localhost:8000/api/auth/register`
+- **Headers:**
+  ```
+  Content-Type: application/json
+  ```
+- **Body (raw JSON):**
+  ```json
+  {
+    "email": "no-consent@tws.com",
+    "password": "TestPass123!",
+    "full_name": "No Consent User"
+  }
+  ```
+
+**Expected Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "error": "GDPR consent is required for registration. Consent must be explicitly set to true."
+}
+```
+
+### Test 2: Registration WITH Consent = false (Should Fail)
+
+**Purpose:** Verify that registration is blocked when consent is explicitly set to false
+
+- **Method:** `POST`
+- **URL:** `http://localhost:8000/api/auth/register`
+- **Headers:**
+  ```
+  Content-Type: application/json
+  ```
+- **Body (raw JSON):**
+  ```json
+  {
+    "email": "false-consent@tws.com",
+    "password": "TestPass123!",
+    "full_name": "False Consent User",
+    "consent": false
+  }
+  ```
+
+**Expected Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "error": "GDPR consent is required for registration. Consent must be explicitly set to true."
+}
+```
+
+### Test 3: Registration WITH Consent = true (Should Succeed)
+
+**Purpose:** Verify successful registration when consent is explicitly provided
+
+- **Method:** `POST`
+- **URL:** `http://localhost:8000/api/auth/register`
+- **Headers:**
+  ```
+  Content-Type: application/json
+  ```
+- **Body (raw JSON):**
+  ```json
+  {
+    "email": "consent-user@tws.com",
+    "password": "TestPass123!",
+    "full_name": "Consent User",
+    "avatar_url": "https://via.placeholder.com/150",
+    "consent": true
+  }
+  ```
+
+**Expected Response (201 Created):**
+
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "email": "consent-user@tws.com",
+      "full_name": "Consent User",
+      "created_at": "2025-06-06T12:35:00.000Z"
+    },
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "refresh_token_here",
+    "expires_in": 3600
+  }
+}
+```
+
+**⚠️ IMPORTANT:** Save the `access_token` from this response for subsequent tests!
+
+### Test 4: Get Consent Status (With JWT)
+
+**Purpose:** Verify that authenticated users can view their consent status
+
+- **Method:** `GET`
+- **URL:** `http://localhost:8000/api/profile/consent`
+- **Headers:**
+  ```
+  Authorization: Bearer <access_token_from_test_3>
+  Content-Type: application/json
+  ```
+
+**Expected Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "consent": true
+  }
+}
+```
+
+### Test 5: Get Consent Status (Without JWT - Should Fail)
+
+**Purpose:** Verify that consent endpoints require authentication
+
+- **Method:** `GET`
+- **URL:** `http://localhost:8000/api/profile/consent`
+- **Headers:**
+  ```
+  Content-Type: application/json
+  ```
+
+**Expected Response (401 Unauthorized):**
+
+```json
+{
+  "success": false,
+  "error": "Access token required"
+}
+```
+
+### Test 6: Update Consent Status to False
+
+**Purpose:** Verify that users can withdraw consent
+
+- **Method:** `PUT`
+- **URL:** `http://localhost:8000/api/profile/consent`
+- **Headers:**
+  ```
+  Authorization: Bearer <access_token_from_test_3>
+  Content-Type: application/json
+  ```
+- **Body (raw JSON):**
+  ```json
+  {
+    "consent": false
+  }
+  ```
+
+**Expected Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Consent status updated successfully",
+  "data": {
+    "consent": false
+  }
+}
+```
+
+### Test 7: Update Consent Status to True
+
+**Purpose:** Verify that users can grant consent again
+
+- **Method:** `PUT`
+- **URL:** `http://localhost:8000/api/profile/consent`
+- **Headers:**
+  ```
+  Authorization: Bearer <access_token_from_test_3>
+  Content-Type: application/json
+  ```
+- **Body (raw JSON):**
+  ```json
+  {
+    "consent": true
+  }
+  ```
+
+**Expected Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Consent status updated successfully",
+  "data": {
+    "consent": true
+  }
+}
+```
+
+### Test 8: Update Consent with Invalid Value (Should Fail)
+
+**Purpose:** Verify proper validation of consent values
+
+- **Method:** `PUT`
+- **URL:** `http://localhost:8000/api/profile/consent`
+- **Headers:**
+  ```
+  Authorization: Bearer <access_token_from_test_3>
+  Content-Type: application/json
+  ```
+- **Body (raw JSON):**
+  ```json
+  {
+    "consent": "yes"
+  }
+  ```
+
+**Expected Response (400 Bad Request):**
+
+```json
+{
+  "success": false,
+  "error": "Consent must be a boolean value (true or false)"
+}
+```
+
+### Test 9: Verify Consent Status After Update
+
+**Purpose:** Confirm that consent updates are persistent
+
+- **Method:** `GET`
+- **URL:** `http://localhost:8000/api/profile/consent`
+- **Headers:**
+  ```
+  Authorization: Bearer <access_token_from_test_3>
+  Content-Type: application/json
+  ```
+
+**Expected Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "consent": true
+  }
+}
+```
+
+## BE-5 Test Results Checklist
+
+After completing all tests, verify:
+
+- [ ] ✅ Registration fails without consent
+- [ ] ✅ Registration fails with consent = false
+- [ ] ✅ Registration succeeds with consent = true
+- [ ] ✅ Consent endpoints require JWT authentication
+- [ ] ✅ GET /api/profile/consent returns current status
+- [ ] ✅ PUT /api/profile/consent updates consent status
+- [ ] ✅ Consent validation rejects non-boolean values
+- [ ] ✅ Consent updates are persistent and retrievable
+
+## Error Scenarios to Test
+
+### Invalid JWT Token
+
+Use an expired or malformed token to verify proper error handling:
+
+```json
+{
+  "success": false,
+  "error": "Invalid token"
+}
+```
+
+### Missing Request Body
+
+Send PUT request without body:
+
+```json
+{
+  "success": false,
+  "error": "Consent must be a boolean value (true or false)"
+}
+```
