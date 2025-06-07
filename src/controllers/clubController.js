@@ -1,4 +1,5 @@
 const clubService = require('../services/clubService');
+const onboardingService = require('../services/onboardingService');
 const { asyncHandler } = require('../middlewares/errorHandler');
 
 /**
@@ -307,6 +308,21 @@ const inviteUserByEmail = asyncHandler(async (req, res) => {
       userId,
     );
 
+    // Auto-update onboarding status for member invitation
+    try {
+      await onboardingService.autoUpdateOnboardingStatus(id, 'member_invited', {
+        email,
+        role,
+        invitation_id: invitation.id,
+      });
+    } catch (onboardingError) {
+      console.warn(
+        'Failed to update onboarding status:',
+        onboardingError.message,
+      );
+      // Don't fail the invitation if onboarding update fails
+    }
+
     res.status(201).json({
       success: true,
       data: invitation,
@@ -350,6 +366,21 @@ const generateInviteCode = asyncHandler(async (req, res) => {
   try {
     const invitation = await clubService.generateInviteCode(id, role, userId);
 
+    // Auto-update onboarding status for invite code generation
+    try {
+      await onboardingService.autoUpdateOnboardingStatus(id, 'member_invited', {
+        role,
+        invite_code: invitation.invite_code,
+        invitation_id: invitation.id,
+      });
+    } catch (onboardingError) {
+      console.warn(
+        'Failed to update onboarding status:',
+        onboardingError.message,
+      );
+      // Don't fail the invite code generation if onboarding update fails
+    }
+
     res.status(201).json({
       success: true,
       data: invitation,
@@ -388,6 +419,26 @@ const acceptInviteCode = asyncHandler(async (req, res) => {
 
   try {
     const membership = await clubService.acceptInviteCode(inviteCode, userId);
+
+    // Auto-update onboarding status for accepted invite code
+    try {
+      await onboardingService.autoUpdateOnboardingStatus(
+        membership.club_id,
+        'member_invited',
+        {
+          user_id: userId,
+          role: membership.role,
+          invite_code: inviteCode,
+          accepted: true,
+        },
+      );
+    } catch (onboardingError) {
+      console.warn(
+        'Failed to update onboarding status:',
+        onboardingError.message,
+      );
+      // Don't fail the acceptance if onboarding update fails
+    }
 
     res.status(200).json({
       success: true,
@@ -432,6 +483,22 @@ const acceptEmailInvitation = asyncHandler(async (req, res) => {
       userId,
       userEmail,
     );
+
+    // Auto-update onboarding status for accepted invitation
+    try {
+      await onboardingService.autoUpdateOnboardingStatus(id, 'member_invited', {
+        user_id: userId,
+        email: userEmail,
+        role: membership.role,
+        accepted: true,
+      });
+    } catch (onboardingError) {
+      console.warn(
+        'Failed to update onboarding status:',
+        onboardingError.message,
+      );
+      // Don't fail the acceptance if onboarding update fails
+    }
 
     res.status(200).json({
       success: true,
