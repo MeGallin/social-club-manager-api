@@ -195,13 +195,18 @@ class ClubService {
       }
 
       // Return the created club with success confirmation
-      return {
+      const result = {
         ...clubData,
         _membership: {
           role: 'owner',
           joined_at: new Date().toISOString(),
         },
       };
+
+      // Initialize onboarding status for the new club (avoid circular dependency)
+      // This will be called by the onboarding controller or other services
+
+      return result;
     } catch (error) {
       if (error.message.includes('A club with this name already exists')) {
         throw error;
@@ -903,6 +908,55 @@ class ClubService {
       return data || [];
     } catch (error) {
       throw new Error(`Failed to retrieve user invitations: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get all clubs where user is a member along with their roles
+   * @param {string} userId - The user's ID
+   * @returns {Promise<Array>} List of clubs with user's role information
+   */
+  async getUserClubs(userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('club_members')
+        .select(
+          `
+          role,
+          joined_at,
+          invite_status,
+          clubs:club_id (
+            id,
+            name,
+            type,
+            description,
+            logo_url,
+            created_at
+          )
+        `,
+        )
+        .eq('user_id', userId)
+        .eq('invite_status', 'active')
+        .order('joined_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      // Transform the data to include role at club level
+      return (data || []).map((membership) => ({
+        ...membership.clubs,
+        role: membership.role,
+        joined_at: membership.joined_at,
+      }));
+    } catch (error) {
+      throw new Error(`Failed to retrieve user clubs: ${error.message}`);
     }
   }
 }
