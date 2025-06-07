@@ -8,6 +8,13 @@ const {
   getMyClubs,
   getClubMembers,
   getClubMembership,
+  inviteUserByEmail,
+  generateInviteCode,
+  acceptInviteCode,
+  acceptEmailInvitation,
+  getClubInvitations,
+  cancelInvitation,
+  getMyInvitations,
 } = require('../controllers/clubController');
 
 const router = express.Router();
@@ -21,6 +28,27 @@ router.use(authenticateToken);
  * @access  Private
  */
 router.get('/my-clubs', getMyClubs);
+
+/**
+ * @route   GET /api/clubs/my-invitations
+ * @desc    Get user's pending invitations
+ * @access  Private
+ */
+router.get('/my-invitations', getMyInvitations);
+
+/**
+ * @route   POST /api/clubs/join/:inviteCode
+ * @desc    Accept an invitation using invite code
+ * @access  Private
+ */
+router.post('/join/:inviteCode', acceptInviteCode);
+
+/**
+ * @route   DELETE /api/clubs/invitations/:invitationId
+ * @desc    Cancel/revoke an invitation (admin only)
+ * @access  Private
+ */
+router.delete('/invitations/:invitationId', cancelInvitation);
 
 /**
  * @route   POST /api/clubs
@@ -49,6 +77,34 @@ router.get('/:id/members', getClubMembers);
  * @access  Private
  */
 router.get('/:id/membership', getClubMembership);
+
+/**
+ * @route   POST /api/clubs/:id/invite-email
+ * @desc    Invite a user to join a club by email (admin only)
+ * @access  Private
+ */
+router.post('/:id/invite-email', inviteUserByEmail);
+
+/**
+ * @route   POST /api/clubs/:id/invite-code
+ * @desc    Generate an invite code for joining a club (admin only)
+ * @access  Private
+ */
+router.post('/:id/invite-code', generateInviteCode);
+
+/**
+ * @route   POST /api/clubs/:id/accept-invitation
+ * @desc    Accept an email invitation
+ * @access  Private
+ */
+router.post('/:id/accept-invitation', acceptEmailInvitation);
+
+/**
+ * @route   GET /api/clubs/:id/invitations
+ * @desc    Get pending invitations for a club (admin only)
+ * @access  Private
+ */
+router.get('/:id/invitations', getClubInvitations);
 
 /**
  * @route   PATCH /api/clubs/:id

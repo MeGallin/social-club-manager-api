@@ -275,6 +275,289 @@ const getClubMembership = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Invite a user to join a club by email
+ * @route   POST /api/clubs/:id/invite-email
+ * @access  Private (requires admin permissions)
+ */
+const inviteUserByEmail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const { email, role = 'member' } = req.body;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Club ID is required',
+    });
+  }
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email is required',
+    });
+  }
+
+  try {
+    const invitation = await clubService.inviteUserByEmail(
+      id,
+      email,
+      role,
+      userId,
+    );
+
+    res.status(201).json({
+      success: true,
+      data: invitation,
+      message: 'Invitation sent successfully',
+    });
+  } catch (error) {
+    if (
+      error.message.includes('Only club owners and admins') ||
+      error.message.includes('Invalid email format') ||
+      error.message.includes('Role must be') ||
+      error.message.includes('already been sent') ||
+      error.message.includes('already a member')
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
+/**
+ * @desc    Generate an invite code for joining a club
+ * @route   POST /api/clubs/:id/invite-code
+ * @access  Private (requires admin permissions)
+ */
+const generateInviteCode = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const { role = 'member' } = req.body;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Club ID is required',
+    });
+  }
+
+  try {
+    const invitation = await clubService.generateInviteCode(id, role, userId);
+
+    res.status(201).json({
+      success: true,
+      data: invitation,
+      message: 'Invite code generated successfully',
+    });
+  } catch (error) {
+    if (
+      error.message.includes('Only club owners and admins') ||
+      error.message.includes('Role must be')
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
+/**
+ * @desc    Accept an invitation using invite code
+ * @route   POST /api/clubs/join/:inviteCode
+ * @access  Private (requires authentication)
+ */
+const acceptInviteCode = asyncHandler(async (req, res) => {
+  const { inviteCode } = req.params;
+  const userId = req.user.id;
+
+  if (!inviteCode) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invite code is required',
+    });
+  }
+
+  try {
+    const membership = await clubService.acceptInviteCode(inviteCode, userId);
+
+    res.status(200).json({
+      success: true,
+      data: membership,
+      message: 'Successfully joined the club',
+    });
+  } catch (error) {
+    if (
+      error.message.includes('Invalid or expired') ||
+      error.message.includes('already a member')
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
+/**
+ * @desc    Accept an email invitation
+ * @route   POST /api/clubs/:id/accept-invitation
+ * @access  Private (requires authentication)
+ */
+const acceptEmailInvitation = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Club ID is required',
+    });
+  }
+
+  try {
+    const membership = await clubService.acceptEmailInvitation(
+      id,
+      userId,
+      userEmail,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: membership,
+      message: 'Successfully accepted invitation',
+    });
+  } catch (error) {
+    if (
+      error.message.includes('No pending invitation') ||
+      error.message.includes('Unable to verify user')
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
+/**
+ * @desc    Get pending invitations for a club
+ * @route   GET /api/clubs/:id/invitations
+ * @access  Private (requires admin permissions)
+ */
+const getClubInvitations = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Club ID is required',
+    });
+  }
+
+  try {
+    const invitations = await clubService.getClubInvitations(id, userId);
+
+    res.status(200).json({
+      success: true,
+      data: invitations,
+    });
+  } catch (error) {
+    if (error.message.includes('Only club owners and admins')) {
+      return res.status(403).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
+/**
+ * @desc    Cancel/revoke an invitation
+ * @route   DELETE /api/clubs/invitations/:invitationId
+ * @access  Private (requires admin permissions)
+ */
+const cancelInvitation = asyncHandler(async (req, res) => {
+  const { invitationId } = req.params;
+  const userId = req.user.id;
+
+  if (!invitationId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invitation ID is required',
+    });
+  }
+
+  try {
+    await clubService.cancelInvitation(invitationId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Invitation cancelled successfully',
+    });
+  } catch (error) {
+    if (
+      error.message.includes('Invitation not found') ||
+      error.message.includes('Only pending invitations') ||
+      error.message.includes('Only club owners and admins')
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
+/**
+ * @desc    Get user's pending invitations
+ * @route   GET /api/clubs/my-invitations
+ * @access  Private (requires authentication)
+ */
+const getMyInvitations = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
+  try {
+    const invitations = await clubService.getUserPendingInvitations(
+      userId,
+      userEmail,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: invitations,
+    });
+  } catch (error) {
+    if (error.message.includes('Unable to verify user')) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    throw error;
+  }
+});
+
 module.exports = {
   createClub,
   getClubById,
@@ -283,4 +566,11 @@ module.exports = {
   getMyClubs,
   getClubMembers,
   getClubMembership,
+  inviteUserByEmail,
+  generateInviteCode,
+  acceptInviteCode,
+  acceptEmailInvitation,
+  getClubInvitations,
+  cancelInvitation,
+  getMyInvitations,
 };
