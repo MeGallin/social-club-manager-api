@@ -56,6 +56,11 @@ const registerUser = asyncHandler(async (req, res) => {
       consent,
     });
 
+    // Temporary debugging
+    console.log('🔍 Controller received result:', JSON.stringify(result, null, 2));
+    console.log('🔍 Session data:', result.session);
+    console.log('🔍 Access token:', result.session?.access_token);
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
