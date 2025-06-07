@@ -499,6 +499,412 @@ class ClubService {
       throw new Error(`Failed to check admin status: ${error.message}`);
     }
   }
+
+  /**
+   * Invite a user to join a club by email
+   * @param {string} clubId - The club ID
+   * @param {string} email - The email of the user to invite
+   * @param {string} role - The role to assign ('member' or 'admin')
+   * @param {string} inviterId - The ID of the user sending the invitation
+   * @returns {Promise<Object>} The invitation record
+   */
+  async inviteUserByEmail(clubId, email, role, inviterId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    // Validate role
+    if (!['member', 'admin'].includes(role)) {
+      throw new Error('Role must be either "member" or "admin"');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Error('Invalid email format');
+    }
+
+    try {
+      // Check if inviter has admin permissions
+      const isAdmin = await this.isClubAdmin(clubId, inviterId);
+      if (!isAdmin) {
+        throw new Error('Only club owners and admins can invite new members');
+      }
+
+      // Check if user is already a member or has pending invitation
+      const { data: existingMember, error: checkError } = await supabase
+        .from('club_members')
+        .select('*')
+        .eq('club_id', clubId)
+        .or(
+          `email.eq.${email},user_id.in.(select id from auth.users where email = '${email}')`,
+        )
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw new Error(`Database error: ${checkError.message}`);
+      }
+
+      if (existingMember) {
+        if (existingMember.invite_status === 'pending') {
+          throw new Error('An invitation has already been sent to this email');
+        }
+        if (existingMember.invite_status === 'active') {
+          throw new Error('This user is already a member of the club');
+        }
+      }
+
+      // Create invitation record
+      const invitationData = {
+        club_id: clubId,
+        email: email.toLowerCase(),
+        role: role,
+        invite_status: 'pending',
+        invited_by: inviterId,
+        invited_at: new Date().toISOString(),
+      };
+
+      const { data: invitation, error: inviteError } = await supabase
+        .from('club_members')
+        .insert([invitationData])
+        .select()
+        .single();
+
+      if (inviteError) {
+        throw new Error(`Failed to create invitation: ${inviteError.message}`);
+      }
+
+      return invitation;
+    } catch (error) {
+      throw new Error(`Failed to invite user: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate an invite code for joining a club
+   * @param {string} clubId - The club ID
+   * @param {string} role - The role to assign ('member' or 'admin')
+   * @param {string} inviterId - The ID of the user generating the code
+   * @returns {Promise<Object>} The invitation record with invite code
+   */
+  async generateInviteCode(clubId, role, inviterId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    // Validate role
+    if (!['member', 'admin'].includes(role)) {
+      throw new Error('Role must be either "member" or "admin"');
+    }
+
+    try {
+      // Check if inviter has admin permissions
+      const isAdmin = await this.isClubAdmin(clubId, inviterId);
+      if (!isAdmin) {
+        throw new Error(
+          'Only club owners and admins can generate invite codes',
+        );
+      }
+
+      // Generate secure invite code
+      const { data: codeData, error: codeError } = await supabase.rpc(
+        'generate_invite_code',
+      );
+
+      if (codeError) {
+        throw new Error(`Failed to generate invite code: ${codeError.message}`);
+      }
+
+      const inviteCode = codeData;
+
+      // Create invitation record with invite code
+      const invitationData = {
+        club_id: clubId,
+        role: role,
+        invite_status: 'pending',
+        invite_code: inviteCode,
+        invited_by: inviterId,
+        invited_at: new Date().toISOString(),
+      };
+
+      const { data: invitation, error: inviteError } = await supabase
+        .from('club_members')
+        .insert([invitationData])
+        .select()
+        .single();
+
+      if (inviteError) {
+        throw new Error(`Failed to create invitation: ${inviteError.message}`);
+      }
+
+      return invitation;
+    } catch (error) {
+      throw new Error(`Failed to generate invite code: ${error.message}`);
+    }
+  }
+
+  /**
+   * Accept an invitation using invite code
+   * @param {string} inviteCode - The invitation code
+   * @param {string} userId - The ID of the user accepting the invitation
+   * @returns {Promise<Object>} The updated membership record
+   */
+  async acceptInviteCode(inviteCode, userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      // Find the invitation
+      const { data: invitation, error: findError } = await supabase
+        .from('club_members')
+        .select('*')
+        .eq('invite_code', inviteCode)
+        .eq('invite_status', 'pending')
+        .single();
+
+      if (findError || !invitation) {
+        throw new Error('Invalid or expired invitation code');
+      }
+
+      // Check if user is already a member of this club
+      const existingMembership = await this.getUserClubMembership(
+        invitation.club_id,
+        userId,
+      );
+      if (existingMembership && existingMembership.invite_status === 'active') {
+        throw new Error('You are already a member of this club');
+      }
+
+      // Update the invitation to active status
+      const { data: updatedMembership, error: updateError } = await supabase
+        .from('club_members')
+        .update({
+          user_id: userId,
+          invite_status: 'active',
+          joined_at: new Date().toISOString(),
+        })
+        .eq('id', invitation.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw new Error(`Failed to accept invitation: ${updateError.message}`);
+      }
+
+      return updatedMembership;
+    } catch (error) {
+      throw new Error(`Failed to accept invitation: ${error.message}`);
+    }
+  }
+
+  /**
+   * Accept an email invitation
+   * @param {string} clubId - The club ID
+   * @param {string} userId - The ID of the user accepting the invitation
+   * @param {string} userEmail - The email of the user accepting the invitation
+   * @returns {Promise<Object>} The updated membership record
+   */
+  async acceptEmailInvitation(clubId, userId, userEmail) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      // Find the email invitation
+      const { data: invitation, error: findError } = await supabase
+        .from('club_members')
+        .select('*')
+        .eq('club_id', clubId)
+        .eq('email', userEmail.toLowerCase())
+        .eq('invite_status', 'pending')
+        .single();
+
+      if (findError || !invitation) {
+        throw new Error('No pending invitation found for your email');
+      }
+
+      // Update the invitation to active status
+      const { data: updatedMembership, error: updateError } = await supabase
+        .from('club_members')
+        .update({
+          user_id: userId,
+          invite_status: 'active',
+          joined_at: new Date().toISOString(),
+        })
+        .eq('id', invitation.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw new Error(`Failed to accept invitation: ${updateError.message}`);
+      }
+
+      return updatedMembership;
+    } catch (error) {
+      throw new Error(`Failed to accept email invitation: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get pending invitations for a club (admin only)
+   * @param {string} clubId - The club ID
+   * @param {string} userId - The requesting user's ID
+   * @returns {Promise<Array>} List of pending invitations
+   */
+  async getClubInvitations(clubId, userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      // Check if user has admin permissions
+      const isAdmin = await this.isClubAdmin(clubId, userId);
+      if (!isAdmin) {
+        throw new Error('Only club owners and admins can view invitations');
+      }
+
+      // Get all pending invitations for the club
+      const { data, error } = await supabase
+        .from('club_members')
+        .select(
+          `
+          id,
+          email,
+          role,
+          invite_status,
+          invite_code,
+          invited_at,
+          invited_by,
+          inviter:invited_by (
+            full_name,
+            avatar_url
+          )
+        `,
+        )
+        .eq('club_id', clubId)
+        .eq('invite_status', 'pending')
+        .order('invited_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      throw new Error(`Failed to retrieve invitations: ${error.message}`);
+    }
+  }
+
+  /**
+   * Cancel/revoke an invitation (admin only)
+   * @param {string} invitationId - The invitation ID
+   * @param {string} userId - The requesting user's ID
+   * @returns {Promise<boolean>} Success status
+   */
+  async cancelInvitation(invitationId, userId) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      // First, get the invitation to check permissions
+      const { data: invitation, error: findError } = await supabase
+        .from('club_members')
+        .select('club_id, invite_status')
+        .eq('id', invitationId)
+        .single();
+
+      if (findError || !invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      if (invitation.invite_status !== 'pending') {
+        throw new Error('Only pending invitations can be cancelled');
+      }
+
+      // Check if user has admin permissions for this club
+      const isAdmin = await this.isClubAdmin(invitation.club_id, userId);
+      if (!isAdmin) {
+        throw new Error('Only club owners and admins can cancel invitations');
+      }
+
+      // Delete the invitation
+      const { error: deleteError } = await supabase
+        .from('club_members')
+        .delete()
+        .eq('id', invitationId);
+
+      if (deleteError) {
+        throw new Error(`Failed to cancel invitation: ${deleteError.message}`);
+      }
+
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to cancel invitation: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get user's pending invitations
+   * @param {string} userId - The user's ID
+   * @param {string} userEmail - The user's email
+   * @returns {Promise<Array>} List of pending invitations for the user
+   */
+  async getUserPendingInvitations(userId, userEmail) {
+    if (!this._isSupabaseAvailable()) {
+      throw new Error(
+        'Supabase is not configured. Cannot perform database operations.',
+      );
+    }
+
+    try {
+      // Get pending invitations by email
+      const { data, error } = await supabase
+        .from('club_members')
+        .select(
+          `
+          id,
+          club_id,
+          role,
+          invite_status,
+          invited_at,
+          club:club_id (
+            name,
+            description,
+            logo_url
+          ),
+          inviter:invited_by (
+            full_name,
+            avatar_url
+          )
+        `,
+        )
+        .eq('email', userEmail.toLowerCase())
+        .eq('invite_status', 'pending')
+        .order('invited_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      throw new Error(`Failed to retrieve user invitations: ${error.message}`);
+    }
+  }
 }
 
 module.exports = new ClubService();
